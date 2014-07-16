@@ -32,6 +32,11 @@
            [org.elasticsearch.action.count CountRequest CountResponse]
            [org.elasticsearch.action.search SearchRequest SearchResponse SearchScrollRequest
             MultiSearchRequestBuilder MultiSearchRequest MultiSearchResponse MultiSearchResponse$Item]
+           [org.elasticsearch.search.aggregations Aggregation Aggregations]
+           [org.elasticsearch.search.aggregations.bucket MultiBucketsAggregation MultiBucketsAggregation$Bucket]
+           [org.elasticsearch.search.aggregations.metrics.avg Avg]
+           [org.elasticsearch.search.aggregations.metrics.stats Stats]
+           [org.elasticsearch.search.aggregations.metrics.stats.extended ExtendedStats]
            [org.elasticsearch.search.builder SearchSourceBuilder]
            [org.elasticsearch.search.sort SortBuilder SortOrder]
            [org.elasticsearch.search SearchHits SearchHit]
@@ -873,9 +878,6 @@
   (facet-to-map [^QueryFacet ft]
     {:_type   QueryFacet/TYPE
      :count   (.getCount ft)}))
-
-
-
 
 (defn- search-facets->seq
   [^Facets facets]
