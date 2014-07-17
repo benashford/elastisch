@@ -967,8 +967,7 @@
   
   SingleBucketAggregation
   (aggregation-value [^SingleBucketAggregation agg]
-    (let [single-bucket {:name (.getName agg)
-                         :doc_count (.getDocCount agg)}
+    (let [single-bucket {:doc_count (.getDocCount agg)}
           aggregations (aggregations->seq (.getAggregations agg))]
       (if-not (empty? aggregations)
         (assoc single-bucket :aggregations aggregations)

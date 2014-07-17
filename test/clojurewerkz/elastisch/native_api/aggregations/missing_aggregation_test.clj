@@ -26,5 +26,4 @@
                                    :query (q/match-all)
                                    :aggregations {:missing_title (a/missing "country")})
           agg          (aggregation-from response :missing_title)]
-      (is (= {:doc_count 3
-              :name "missing_title"} agg)))))
+      (is (= {:doc_count 3} agg)))))
