@@ -978,7 +978,7 @@
                  (assoc result :facets (search-facets->seq facets))
                  result)]
     (if-let [aggregations (.getAggregations r)]
-      (assoc result :aggregations (reduce aggregation-to-map {} (.asMap aggregations)))
+      (assoc result :aggregations (reduce aggregations-to-map {} (.asMap aggregations)))
       result)))
 
 (defn multi-search-response->seq
