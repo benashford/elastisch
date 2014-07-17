@@ -932,16 +932,20 @@
   ;;  }
   ;;  :aggregations {:avg_age {:value 29.0}}
   ;; }
-  {:took       (.getTookInMillis r)
-   :timed_out  (.isTimedOut r)
-   :_scroll_id (.getScrollId r)
-   :facets     (search-facets->seq (.getFacets r))
-   ;; TODO: suggestions
-   :_shards    {:total      (.getTotalShards r)
-                :successful (.getSuccessfulShards r)
-                :failed     (.getFailedShards r)}
-   :hits       (search-hits->seq (.getHits r))
-   :aggregations (reduce aggregation-to-map {} (.. r getAggregations asMap))})
+  (let [result {:took       (.getTookInMillis r)
+                :timed_out  (.isTimedOut r)
+                :_scroll_id (.getScrollId r)
+                ;; TODO: suggestions
+                :_shards    {:total      (.getTotalShards r)
+                             :successful (.getSuccessfulShards r)
+                             :failed     (.getFailedShards r)}
+                :hits       (search-hits->seq (.getHits r))}
+        result (if-let [facets (.getFacets r)]
+                 (assoc result :facets (search-facets->seq facets))
+                 result)]
+    (if-let [aggregations (.getAggregations r)]
+      (assoc result :aggregations (reduce aggregation-to-map {} (.asMap aggregations)))
+      result)))
 
 (defn multi-search-response->seq
   [^MultiSearchResponse r]
