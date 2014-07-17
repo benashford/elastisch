@@ -53,6 +53,11 @@
            [org.elasticsearch.action.percolate PercolateRequestBuilder PercolateResponse PercolateResponse$Match]
            ;; Aggregations
            org.elasticsearch.search.aggregations.metrics.avg.Avg
+           org.elasticsearch.search.aggregations.metrics.max.Max
+           org.elasticsearch.search.aggregations.metrics.min.Min
+           org.elasticsearch.search.aggregations.metrics.stats.extended.ExtendedStats
+           [org.elasticsearch.search.aggregations.bucket.histogram Histogram Histogram$Bucket]
+           org.elasticsearch.search.aggregations.bucket.MultiBucketsAggregation$Bucket
            ;; Administrative Actions
            org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsRequest
            org.elasticsearch.action.admin.indices.create.CreateIndexRequest
@@ -887,15 +892,42 @@
             {}
             (.facetsAsMap facets))))
 
+(defn bucket->map
+  [^Histogram$Bucket b]
+  {:key_as_string (.getKey b) :doc_count (.getDocCount b) :key (.. b getKeyAsNumber longValue)})
+
 (defprotocol AggregatorPresenter
   (aggregation-value [agg] "Presents an aggregation as immutable Clojure map"))
 
 (extend-protocol AggregatorPresenter
   Avg
   (aggregation-value [^Avg agg]
-    {:value (.getValue agg)}))
+    {:value (.getValue agg)})
 
-(defn aggregation-to-map
+  Max
+  (aggregation-value [^Max agg]
+    {:value (.getValue agg)})
+
+  Min
+  (aggregation-value [^Min agg]
+    {:value (.getValue agg)})
+
+  ExtendedStats
+  (aggregation-value [^ExtendedStats agg]
+    {:count (.getCount agg)
+     :min   (.getMin agg)
+     :max   (.getMax agg)
+     :avg   (.getAvg agg)
+     :sum   (.getSum agg)
+     :sum_of_squares (.getSumOfSquares agg)
+     :variance       (.getVariance agg)
+     :std_deviation  (.getStdDeviation agg)})
+
+  Histogram
+  (aggregation-value [^Histogram agg]
+    {:buckets (map bucket->map (.getBuckets agg))}))
+
+(defn aggregations-to-map
   [acc [^String name agg]]
   ;; <String, Aggregation>
   (assoc acc (keyword name) (aggregation-value agg)))

@@ -9,17 +9,18 @@
 
 (ns clojurewerkz.elastisch.native-api.aggregations.min-aggregation-test
   (:require [clojurewerkz.elastisch.native.document :as doc]
+            [clojurewerkz.elastisch.native :as native]
             [clojurewerkz.elastisch.query         :as q]
             [clojurewerkz.elastisch.aggregation   :as a]
-            [clojurewerkz.elastisch.fixtures :as fx]
-            [clojurewerkz.elastisch.test.helpers :as th]
+            [clojurewerkz.elastisch.fixtures      :as fx]
+            [clojurewerkz.elastisch.test.helpers  :as th]
             [clojure.test :refer :all]
-            [clojurewerkz.elastisch.rest.response :refer :all]))
+            [clojurewerkz.elastisch.native.response :refer :all]))
 
 (use-fixtures :each fx/reset-indexes fx/prepopulate-people-index)
 
 (let [conn (th/connect-native-client)]
-  (deftest ^{:rest true :aggregation true} test-min-aggregation
+  (deftest ^{:native true :aggregation true} test-min-aggregation
     (let [index-name   "people"
           mapping-type "person"
           response     (doc/search conn index-name mapping-type

@@ -9,12 +9,13 @@
 
 (ns clojurewerkz.elastisch.native-api.aggregations.extended-stats-aggregation-test
   (:require [clojurewerkz.elastisch.native.document :as doc]
-            [clojurewerkz.elastisch.query         :as q]
-            [clojurewerkz.elastisch.aggregation   :as a]
-            [clojurewerkz.elastisch.fixtures :as fx]
+            [clojurewerkz.elastisch.native      :as es]
+            [clojurewerkz.elastisch.query       :as q]
+            [clojurewerkz.elastisch.aggregation :as a]
+            [clojurewerkz.elastisch.fixtures    :as fx]
             [clojurewerkz.elastisch.test.helpers :as th]
             [clojure.test :refer :all]
-            [clojurewerkz.elastisch.rest.response :refer :all]))
+            [clojurewerkz.elastisch.native.response :refer :all]))
 
 (use-fixtures :each fx/reset-indexes fx/prepopulate-people-index)
 
