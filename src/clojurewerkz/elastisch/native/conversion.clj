@@ -33,7 +33,7 @@
            [org.elasticsearch.action.search SearchRequest SearchResponse SearchScrollRequest
             MultiSearchRequestBuilder MultiSearchRequest MultiSearchResponse MultiSearchResponse$Item]
            [org.elasticsearch.search.aggregations Aggregation Aggregations]
-           [org.elasticsearch.search.aggregations.bucket MultiBucketsAggregation MultiBucketsAggregation$Bucket]
+           [org.elasticsearch.search.aggregations.bucket MultiBucketsAggregation MultiBucketsAggregation$Bucket SingleBucketAggregation]
            [org.elasticsearch.search.aggregations.metrics.avg Avg]
            [org.elasticsearch.search.aggregations.metrics.stats Stats]
            [org.elasticsearch.search.aggregations.metrics.stats.extended ExtendedStats]
@@ -892,12 +892,25 @@
             {}
             (.facetsAsMap facets))))
 
-(defn bucket->map
-  [^Histogram$Bucket b]
-  {:key_as_string (.getKey b) :doc_count (.getDocCount b) :key (.. b getKeyAsNumber longValue)})
-
 (defprotocol AggregatorPresenter
   (aggregation-value [agg] "Presents an aggregation as immutable Clojure map"))
+
+(defn aggregations-to-map
+  [acc [^String name agg]]
+  ;; <String, Aggregation>
+  (assoc acc (keyword name) (aggregation-value agg)))
+
+(defn aggregations->seq [^Aggregations aggregations]
+  (reduce aggregations-to-map {} (.asMap aggregations)))
+
+(defn bucket->map
+  [^Histogram$Bucket b]
+  (let [bucket-map {:key (.getKey b)
+                    :doc_count (.getDocCount b)}
+        aggregations (aggregations->seq (.getAggregations b))]
+    (if-not (empty? aggregations)
+      (assoc bucket-map :aggregations aggregations)
+      bucket-map)))
 
 (extend-protocol AggregatorPresenter
   Avg
@@ -925,12 +938,20 @@
 
   Histogram
   (aggregation-value [^Histogram agg]
-    {:buckets (map bucket->map (.getBuckets agg))}))
+    {:buckets (mapv (fn [b]
+                      (let [bm (bucket->map b)]
+                        (assoc bm
+                          :key_as_number (.getKeyAsNumber b))))
+                    (.getBuckets agg))})
 
-(defn aggregations-to-map
-  [acc [^String name agg]]
-  ;; <String, Aggregation>
-  (assoc acc (keyword name) (aggregation-value agg)))
+  SingleBucketAggregation
+  (aggregation-value [^SingleBucketAggregation agg]
+    (let [single-bucket {:name (.getName agg)
+                         :doc_count (.getDocCount agg)}
+          aggregations (aggregations->seq (.getAggregations agg))]
+      (if-not (empty? aggregations)
+        (assoc single-bucket :aggregations aggregations)
+        single-bucket))))
 
 (defn search-response->seq
   [^SearchResponse r]
@@ -978,7 +999,7 @@
                  (assoc result :facets (search-facets->seq facets))
                  result)]
     (if-let [aggregations (.getAggregations r)]
-      (assoc result :aggregations (reduce aggregations-to-map {} (.asMap aggregations)))
+      (assoc result :aggregations (aggregations->seq aggregations))
       result)))
 
 (defn multi-search-response->seq
