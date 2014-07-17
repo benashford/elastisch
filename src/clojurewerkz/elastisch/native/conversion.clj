@@ -32,11 +32,6 @@
            [org.elasticsearch.action.count CountRequest CountResponse]
            [org.elasticsearch.action.search SearchRequest SearchResponse SearchScrollRequest
             MultiSearchRequestBuilder MultiSearchRequest MultiSearchResponse MultiSearchResponse$Item]
-           [org.elasticsearch.search.aggregations Aggregation Aggregations]
-           [org.elasticsearch.search.aggregations.bucket MultiBucketsAggregation MultiBucketsAggregation$Bucket SingleBucketAggregation]
-           [org.elasticsearch.search.aggregations.metrics.avg Avg]
-           [org.elasticsearch.search.aggregations.metrics.stats Stats]
-           [org.elasticsearch.search.aggregations.metrics.stats.extended ExtendedStats]
            [org.elasticsearch.search.builder SearchSourceBuilder]
            [org.elasticsearch.search.sort SortBuilder SortOrder]
            [org.elasticsearch.search SearchHits SearchHit]
@@ -52,12 +47,19 @@
            org.elasticsearch.action.mlt.MoreLikeThisRequest
            [org.elasticsearch.action.percolate PercolateRequestBuilder PercolateResponse PercolateResponse$Match]
            ;; Aggregations
+           org.elasticsearch.search.aggregations.Aggregations
            org.elasticsearch.search.aggregations.metrics.avg.Avg
            org.elasticsearch.search.aggregations.metrics.max.Max
            org.elasticsearch.search.aggregations.metrics.min.Min
+           org.elasticsearch.search.aggregations.metrics.stats.Stats
            org.elasticsearch.search.aggregations.metrics.stats.extended.ExtendedStats
-           [org.elasticsearch.search.aggregations.bucket.histogram Histogram Histogram$Bucket]
+           org.elasticsearch.search.aggregations.metrics.sum.Sum
+           org.elasticsearch.search.aggregations.metrics.valuecount.ValueCount
+           org.elasticsearch.search.aggregations.bucket.SingleBucketAggregation
            org.elasticsearch.search.aggregations.bucket.MultiBucketsAggregation$Bucket
+           [org.elasticsearch.search.aggregations.bucket.histogram Histogram Histogram$Bucket]
+           [org.elasticsearch.search.aggregations.bucket.range Range Range$Bucket]
+           [org.elasticsearch.search.aggregations.bucket.terms StringTerms Terms Terms$Bucket]
            ;; Administrative Actions
            org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsRequest
            org.elasticsearch.action.admin.indices.create.CreateIndexRequest
@@ -924,7 +926,7 @@
   Min
   (aggregation-value [^Min agg]
     {:value (.getValue agg)})
-
+  
   ExtendedStats
   (aggregation-value [^ExtendedStats agg]
     {:count (.getCount agg)
@@ -936,14 +938,33 @@
      :variance       (.getVariance agg)
      :std_deviation  (.getStdDeviation agg)})
 
+  Stats
+  (aggregation-value [^Stats agg]
+    {:count (.getCount agg)
+     :min (.getMin agg)
+     :max (.getMax agg)
+     :avg (.getAvg agg)
+     :sum (.getSum agg)})
+  
   Histogram
   (aggregation-value [^Histogram agg]
-    {:buckets (mapv (fn [b]
+    {:buckets (mapv (fn [^Histogram$Bucket b]
                       (let [bm (bucket->map b)]
                         (assoc bm
                           :key_as_number (.getKeyAsNumber b))))
                     (.getBuckets agg))})
 
+  StringTerms
+  (aggregation-value [^StringTerms agg]
+    {:buckets (mapv bucket->map (.getBuckets agg))})
+  
+  Terms
+  (aggregation-value [^Terms agg]
+    {:buckets (mapv (fn [^Terms$Bucket b]
+                      (let [bm (bucket->map b)]
+                        (assoc bm :key_as_number (.getKeyAsNumber b))))
+                    (.getBuckets agg))})
+  
   SingleBucketAggregation
   (aggregation-value [^SingleBucketAggregation agg]
     (let [single-bucket {:name (.getName agg)
@@ -951,7 +972,24 @@
           aggregations (aggregations->seq (.getAggregations agg))]
       (if-not (empty? aggregations)
         (assoc single-bucket :aggregations aggregations)
-        single-bucket))))
+        single-bucket)))
+
+  Range
+  (aggregation-value [^Range agg]
+    {:buckets (mapv (fn [^Range$Bucket b]
+                      (let [bm (bucket->map b)]
+                        (assoc bm
+                          :from (.getFrom b)
+                          :to (.getTo b))))
+                    (.getBuckets agg))})
+
+  Sum
+  (aggregation-value [^Sum agg]
+    {:value (.getValue agg)})
+
+  ValueCount
+  (aggregation-value [^ValueCount agg]
+    {:value (.getValue agg)}))
 
 (defn search-response->seq
   [^SearchResponse r]
